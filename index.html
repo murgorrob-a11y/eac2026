@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EAC OSH Conference Flyer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'DM Sans', sans-serif; }
+    .flyer-wrapper {
+      width: 600px;
+      height: 600px;
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+    }
+    .flyer-wrapper img.flyer-bg {
+      width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0;
+    }
+    .attendee-photo {
+      width: 180px; height: 180px; border-radius: 50%; background: #e0e7ef;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      position: relative;
+    }
+    .attendee-photo img { width:100%; height:100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+    .name-box {
+      font-weight: 700; font-size: 16px; color: #1a1a1a; text-align: center;
+      min-width: 140px; padding: 4px 12px;
+      background: #fff; border: 2px solid #3ba4dc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+    .toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: #10b981; color: white; padding: 16px 24px;
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      font-weight: 500; z-index: 50; animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(100px); opacity: 0; }
+    }
+    .toast.exit { animation: slideOut 0.3s ease-in forwards; }
+    @media (max-width: 768px) {
+      .flyer-wrapper { width: 100%; max-width: 400px; height: auto; aspect-ratio: 1 / 1; }
+      .attendee-photo { width: 120px; height: 120px; }
+      .name-box { font-size: 14px; padding: 3px 8px; max-width: 160px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 gap-6" style="background: #f4f7fa;">
+
+  <header class="text-center">
+    <h1 class="text-2xl font-bold" style="color: #1a1a1a; font-size: 32px;">Personalize Your Conference Flyer</h1>
+    <p class="mt-1" style="color: #555; font-size: 16px;">Add your name and photo, then download your flyer</p>
+  </header>
+
+  <main class="flex flex-col lg:flex-row gap-6 items-start justify-center w-full px-4">
+    <!-- Flyer Preview -->
+    <div class="flex justify-center shrink-0">
+      <div id="flyer" class="flyer-wrapper shadow-xl rounded-md">
+        <!-- REPLACE THIS SRC with your flyer background image -->
+        <img class="flyer-bg" src="./flyer-bg.png" loading="lazy" alt="EAC OSH Conference 2026 flyer template">
+        
+        <!-- Overlay for attendee photo -->
+        <div style="position:absolute; top:210px; right:30px;">
+          <div class="attendee-photo" id="photo-placeholder">
+            <span id="photo-empty" class="text-gray-400 text-xs text-center">Your<br>Photo</span>
+            <img id="photo-preview" class="hidden" alt="Attendee photo">
+          </div>
+        </div>
+
+        <!-- Overlay for name -->
+        <div style="position:absolute; bottom:88px; right:52px;">
+          <div class="name-box" id="name-display">Your Name</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex flex-col gap-4 w-full max-w-xs">
+      <div>
+        <label class="block mb-1 font-medium" for="name-input" style="color: #1a1a1a; font-size: 16px;">Your Name</label>
+        <input id="name-input" type="text" placeholder="Enter your name" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+      </div>
+      <div>
+        <label class="block mb-1 font-medium" for="photo-input" style="color: #1a1a1a; font-size: 16px;">Your Photo</label>
+        <input id="photo-input" type="file" accept="image/*" class="w-full text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:font-medium file:cursor-pointer">
+      </div>
+      <button id="download-btn" class="w-full py-3 rounded-lg font-bold text-lg mt-2" style="background: #2563eb; color: #fff; font-size: 16px;">Download Flyer</button>
+    </div>
+  </main>
+
+  <script>
+    const nameInput = document.getElementById('name-input');
+    const nameDisplay = document.getElementById('name-display');
+    const photoInput = document.getElementById('photo-input');
+    const photoPreview = document.getElementById('photo-preview');
+    const photoEmpty = document.getElementById('photo-empty');
+    const downloadBtn = document.getElementById('download-btn');
+
+    nameInput.addEventListener('input', () => {
+      nameDisplay.textContent = nameInput.value || 'Your Name';
+    });
+
+    photoInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        photoPreview.src = ev.target.result;
+        photoPreview.classList.remove('hidden');
+        photoEmpty.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('exit');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    downloadBtn.addEventListener('click', async () => {
+      if (!nameInput.value.trim()) {
+        showToast('Please enter your name first');
+        return;
+      }
+      downloadBtn.disabled = true;
+      downloadBtn.textContent = 'Generating...';
+      try {
+        const canvas = await html2canvas(document.getElementById('flyer'), {
+          useCORS: true,
+          scale: 1.8,
+          allowTaint: true,
+          width: 1080,
+          height: 1080
+        });
+        canvas.toBlob((blob) => {
+          const link = document.createElement('a');
+          const fileName = `EAC_OSH_Conference_${nameInput.value.trim().replace(/\s+/g, '_')}.png`;
+          link.href = URL.createObjectURL(blob);
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+          downloadBtn.disabled = false;
+          downloadBtn.textContent = 'Download Flyer';
+          showToast('Your conference poster has been downloaded successfully.');
+        }, 'image/png');
+      } catch(err) {
+        console.error(err);
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = 'Download Flyer';
+        showToast('Failed to generate poster. Please try again.');
+      }
+    });
+  </script>
+</body>
+</html>
