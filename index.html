@@ -201,12 +201,21 @@
       clone.style.transform = 'none';
       clone.style.margin = '0';
 
-      // Copy name
-      clone.querySelector('#name-display').textContent = nameDisplay.textContent;
+      // Force desktop sizes on the clone so mobile media queries don't shrink it
+      const clonePhoto = clone.querySelector('#photo-placeholder');
+      clonePhoto.style.width = '180px';
+      clonePhoto.style.height = '180px';
+      clonePhoto.style.backgroundSize = 'cover';
+      clonePhoto.style.backgroundPosition = 'center';
+
+      const cloneName = clone.querySelector('#name-display');
+      cloneName.style.fontSize = '16px';
+      cloneName.style.padding = '4px 12px';
+      cloneName.style.maxWidth = '220px';
+      cloneName.textContent = nameDisplay.textContent;
 
       // Copy photo background
       const bg = photoPlaceholder.style.backgroundImage;
-      const clonePhoto = clone.querySelector('#photo-placeholder');
       if (bg && bg !== 'none') {
         clonePhoto.style.backgroundImage = bg;
         clonePhoto.querySelector('#photo-empty').style.display = 'none';
@@ -220,7 +229,7 @@
       document.body.appendChild(clone);
 
       const canvas = await html2canvas(clone, {
-        scale: 2,           // capture sharp
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
