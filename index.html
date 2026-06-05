@@ -9,10 +9,21 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'DM Sans', sans-serif; }
-    .flyer-wrapper {
+    /* NEW: viewport handles responsive sizing without touching the 600x600 flyer */
+    .flyer-viewport {
       width: 600px;
       height: 600px;
       position: relative;
+      overflow: hidden;
+    }
+    .flyer-wrapper {
+      width: 600px;
+      height: 600px;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform-origin: top center;
+      transform: translateX(-50%) scale(var(--flyer-scale, 1));
       overflow: hidden;
       background: #fff;
     }
@@ -50,7 +61,12 @@
     }
     .toast.exit { animation: slideOut 0.3s ease-in forwards; }
     @media (max-width: 768px) {
-      .flyer-wrapper { width: 100%; max-width: 400px; height: auto; aspect-ratio: 1 / 1; }
+      .flyer-viewport {
+        width: 100%;
+        max-width: 600px;
+        height: 0;
+        padding-bottom: 100%; /* reliable 1:1 aspect ratio */
+      }
       .attendee-photo { width: 120px; height: 120px; }
       .name-box { font-size: 14px; padding: 3px 8px; max-width: 160px; }
     }
@@ -65,10 +81,10 @@
 
   <main class="flex flex-col lg:flex-row gap-6 items-start justify-center w-full px-4">
     <!-- Flyer Preview -->
-    <div class="flex justify-center shrink-0">
+    <div class="flex justify-center shrink-0 flyer-viewport">
       <div id="flyer" class="flyer-wrapper shadow-xl rounded-md">
-        <!-- REPLACE THIS SRC with your flyer background image -->
-        <img class="flyer-bg" src="./flyer-bg.png" loading="lazy" alt="EAC OSH Conference 2026 flyer template">
+        <!-- REMOVED loading="lazy" — background must load immediately -->
+        <img class="flyer-bg" src="./flyer-bg.png" alt="EAC OSH Conference 2026 flyer template">
         
         <!-- Overlay for attendee photo -->
         <div style="position:absolute; top:210px; right:30px;">
@@ -106,6 +122,18 @@
     const photoPreview = document.getElementById('photo-preview');
     const photoEmpty = document.getElementById('photo-empty');
     const downloadBtn = document.getElementById('download-btn');
+
+    // Scale the flyer to fit phone screens while keeping DOM at 600x600
+    function setFlyerScale() {
+      const viewport = document.querySelector('.flyer-viewport');
+      const flyer = document.getElementById('flyer');
+      if (!viewport || !flyer) return;
+      const scale = Math.min(1, viewport.clientWidth / 600);
+      flyer.style.setProperty('--flyer-scale', scale);
+    }
+    window.addEventListener('resize', setFlyerScale);
+    window.addEventListener('load', setFlyerScale);
+    setFlyerScale();
 
     nameInput.addEventListener('input', () => {
       nameDisplay.textContent = nameInput.value || 'Your Name';
@@ -147,26 +175,35 @@
           scale: 1,
           allowTaint: true,
           width: 600,
-          height: 600
+          height: 600,
+          backgroundColor: null
         });
-        canvas.toBlob((blob) => {
-          const link = document.createElement('a');
-          const fileName = `EAC_OSH_Conference_${nameInput.value.trim().replace(/\s+/g, '_')}.png`;
-          link.href = URL.createObjectURL(blob);
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-          downloadBtn.disabled = false;
-          downloadBtn.textContent = 'Download Flyer';
-          showToast('Your conference poster has been downloaded successfully.');
-        }, 'image/png');
+
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const fileName = `EAC_OSH_Conference_${nameInput.value.trim().replace(/\s+/g, '_')}.png`;
+
+        if (isIOS) {
+          // iOS Safari doesn't honor download attribute reliably
+          window.open(canvas.toDataURL('image/png'), '_blank');
+        } else {
+          canvas.toBlob((blob) => {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+          }, 'image/png');
+        }
+
+        showToast('Your conference poster has been downloaded successfully.');
       } catch(err) {
         console.error(err);
+        showToast('Failed to generate poster. Please try again.');
+      } finally {
         downloadBtn.disabled = false;
         downloadBtn.textContent = 'Download Flyer';
-        showToast('Failed to generate poster. Please try again.');
       }
     });
   </script>
