@@ -36,7 +36,7 @@
       z-index: 0;
     }
     .attendee-photo {
-      width: 180px; height: 180px;
+      width: 360px; height: 360px;          /* DOUBLED from 180px */
       border-radius: 50%;
       background-color: #e0e7ef;
       background-size: cover;
@@ -81,7 +81,7 @@
         position: absolute;
         top: 0; left: 50%;
       }
-      .attendee-photo { width: 120px; height: 120px; }
+      .attendee-photo { width: 240px; height: 240px; }  /* DOUBLED from 120px */
       .name-box { font-size: 14px; padding: 3px 8px; max-width: 160px; }
     }
   </style>
@@ -100,7 +100,8 @@
         <div id="flyer" class="flyer-wrapper">
           <div class="flyer-bg" style="background-image: url('./flyer-bg.png');"></div>
 
-          <div style="position:absolute; top:210px; right:30px; z-index:1;">
+          <!-- Photo area: moved up to accommodate 360px circle -->
+          <div style="position:absolute; top:120px; right:30px; z-index:1;">
             <div class="attendee-photo" id="photo-placeholder">
               <span id="photo-empty" class="text-gray-400 text-xs text-center">Your<br>Photo</span>
             </div>
@@ -203,8 +204,8 @@
 
       // Force desktop sizes on the clone so mobile media queries don't shrink it
       const clonePhoto = clone.querySelector('#photo-placeholder');
-      clonePhoto.style.width = '180px';
-      clonePhoto.style.height = '180px';
+      clonePhoto.style.width = '360px';         /* DOUBLED from 180px */
+      clonePhoto.style.height = '360px';        /* DOUBLED from 180px */
       clonePhoto.style.backgroundSize = 'cover';
       clonePhoto.style.backgroundPosition = 'center';
 
