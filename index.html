@@ -144,10 +144,10 @@
       try {
         const canvas = await html2canvas(document.getElementById('flyer'), {
           useCORS: true,
-          scale: 1.8,
+          scale: 1,
           allowTaint: true,
-          width: 1080,
-          height: 1080
+          width: 600,
+          height: 600
         });
         canvas.toBlob((blob) => {
           const link = document.createElement('a');
