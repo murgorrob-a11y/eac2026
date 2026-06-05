@@ -9,33 +9,43 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'DM Sans', sans-serif; }
-    /* NEW: viewport handles responsive sizing without touching the 600x600 flyer */
     .flyer-viewport {
       width: 600px;
       height: 600px;
-      position: relative;
       overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .flyer-scaler {
+      transform-origin: top center;
     }
     .flyer-wrapper {
       width: 600px;
       height: 600px;
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform-origin: top center;
-      transform: translateX(-50%) scale(var(--flyer-scale, 1));
+      position: relative;
       overflow: hidden;
       background: #fff;
     }
-    .flyer-wrapper img.flyer-bg {
-      width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0;
+    .flyer-bg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-size: cover;
+      background-position: center;
+      z-index: 0;
     }
     .attendee-photo {
-      width: 180px; height: 180px; border-radius: 50%; background: #e0e7ef;
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
-      position: relative;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background-color: #e0e7ef;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
     }
-    .attendee-photo img { width:100%; height:100%; object-fit: cover; position: absolute; top: 0; left: 0; }
     .name-box {
       font-weight: 700; font-size: 16px; color: #1a1a1a; text-align: center;
       min-width: 140px; padding: 4px 12px;
@@ -48,7 +58,7 @@
     .toast {
       position: fixed; bottom: 20px; right: 20px;
       background: #10b981; color: white; padding: 16px 24px;
-      border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       font-weight: 500; z-index: 50; animation: slideIn 0.3s ease-out;
     }
     @keyframes slideIn {
@@ -62,10 +72,14 @@
     .toast.exit { animation: slideOut 0.3s ease-in forwards; }
     @media (max-width: 768px) {
       .flyer-viewport {
-        width: 100%;
-        max-width: 600px;
-        height: 0;
-        padding-bottom: 100%; /* reliable 1:1 aspect ratio */
+        width: 100%; height: auto;
+        aspect-ratio: 1 / 1;
+        position: relative;
+        display: block;
+      }
+      .flyer-scaler {
+        position: absolute;
+        top: 0; left: 50%;
       }
       .attendee-photo { width: 120px; height: 120px; }
       .name-box { font-size: 14px; padding: 3px 8px; max-width: 160px; }
@@ -81,22 +95,20 @@
 
   <main class="flex flex-col lg:flex-row gap-6 items-start justify-center w-full px-4">
     <!-- Flyer Preview -->
-    <div class="flex justify-center shrink-0 flyer-viewport">
-      <div id="flyer" class="flyer-wrapper shadow-xl rounded-md">
-        <!-- REMOVED loading="lazy" — background must load immediately -->
-        <img class="flyer-bg" src="./flyer-bg.png" alt="EAC OSH Conference 2026 flyer template">
-        
-        <!-- Overlay for attendee photo -->
-        <div style="position:absolute; top:210px; right:30px;">
-          <div class="attendee-photo" id="photo-placeholder">
-            <span id="photo-empty" class="text-gray-400 text-xs text-center">Your<br>Photo</span>
-            <img id="photo-preview" class="hidden" alt="Attendee photo">
-          </div>
-        </div>
+    <div class="flyer-viewport shadow-xl rounded-md">
+      <div class="flyer-scaler">
+        <div id="flyer" class="flyer-wrapper">
+          <div class="flyer-bg" style="background-image: url('./flyer-bg.png');"></div>
 
-        <!-- Overlay for name -->
-        <div style="position:absolute; bottom:88px; right:52px;">
-          <div class="name-box" id="name-display">Your Name</div>
+          <div style="position:absolute; top:210px; right:30px; z-index:1;">
+            <div class="attendee-photo" id="photo-placeholder">
+              <span id="photo-empty" class="text-gray-400 text-xs text-center">Your<br>Photo</span>
+            </div>
+          </div>
+
+          <div style="position:absolute; bottom:88px; right:52px; z-index:1;">
+            <div class="name-box" id="name-display">Your Name</div>
+          </div>
         </div>
       </div>
     </div>
@@ -119,17 +131,23 @@
     const nameInput = document.getElementById('name-input');
     const nameDisplay = document.getElementById('name-display');
     const photoInput = document.getElementById('photo-input');
-    const photoPreview = document.getElementById('photo-preview');
+    const photoPlaceholder = document.getElementById('photo-placeholder');
     const photoEmpty = document.getElementById('photo-empty');
     const downloadBtn = document.getElementById('download-btn');
 
-    // Scale the flyer to fit phone screens while keeping DOM at 600x600
     function setFlyerScale() {
       const viewport = document.querySelector('.flyer-viewport');
-      const flyer = document.getElementById('flyer');
-      if (!viewport || !flyer) return;
+      const scaler = document.querySelector('.flyer-scaler');
       const scale = Math.min(1, viewport.clientWidth / 600);
-      flyer.style.setProperty('--flyer-scale', scale);
+      if (scale < 1) {
+        scaler.style.position = 'absolute';
+        scaler.style.top = '0';
+        scaler.style.left = '50%';
+        scaler.style.transform = `translateX(-50%) scale(${scale})`;
+      } else {
+        scaler.style.position = 'static';
+        scaler.style.transform = 'none';
+      }
     }
     window.addEventListener('resize', setFlyerScale);
     window.addEventListener('load', setFlyerScale);
@@ -144,9 +162,8 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
-        photoPreview.src = ev.target.result;
-        photoPreview.classList.remove('hidden');
-        photoEmpty.classList.add('hidden');
+        photoPlaceholder.style.backgroundImage = `url('${ev.target.result}')`;
+        photoEmpty.style.display = 'none';
       };
       reader.readAsDataURL(file);
     });
@@ -162,6 +179,65 @@
       }, 3000);
     }
 
+    function preload(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = resolve;
+        img.onerror = resolve;
+        img.src = src;
+      });
+    }
+
+    async function generateFlyer() {
+      const flyer = document.getElementById('flyer');
+      const clone = flyer.cloneNode(true);
+
+      // Move off-screen so media queries/transforms don't interfere
+      clone.style.position = 'fixed';
+      clone.style.top = '0';
+      clone.style.left = '-9999px';
+      clone.style.width = '600px';
+      clone.style.height = '600px';
+      clone.style.transform = 'none';
+      clone.style.margin = '0';
+
+      // Copy name
+      clone.querySelector('#name-display').textContent = nameDisplay.textContent;
+
+      // Copy photo background
+      const bg = photoPlaceholder.style.backgroundImage;
+      const clonePhoto = clone.querySelector('#photo-placeholder');
+      if (bg && bg !== 'none') {
+        clonePhoto.style.backgroundImage = bg;
+        clonePhoto.querySelector('#photo-empty').style.display = 'none';
+        const url = bg.slice(4, -1).replace(/["']/g, '');
+        await preload(url);
+      }
+
+      // Ensure template background is ready
+      await preload('./flyer-bg.png');
+
+      document.body.appendChild(clone);
+
+      const canvas = await html2canvas(clone, {
+        scale: 2,           // capture sharp
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        width: 600,
+        height: 600
+      });
+
+      document.body.removeChild(clone);
+
+      // Downscale to exactly 600×600 pixels
+      const final = document.createElement('canvas');
+      final.width = 600;
+      final.height = 600;
+      final.getContext('2d').drawImage(canvas, 0, 0, 600, 600);
+      return final;
+    }
+
     downloadBtn.addEventListener('click', async () => {
       if (!nameInput.value.trim()) {
         showToast('Please enter your name first');
@@ -169,21 +245,13 @@
       }
       downloadBtn.disabled = true;
       downloadBtn.textContent = 'Generating...';
-      try {
-        const canvas = await html2canvas(document.getElementById('flyer'), {
-          useCORS: true,
-          scale: 1,
-          allowTaint: true,
-          width: 600,
-          height: 600,
-          backgroundColor: null
-        });
 
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      try {
+        const canvas = await generateFlyer();
         const fileName = `EAC_OSH_Conference_${nameInput.value.trim().replace(/\s+/g, '_')}.png`;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
         if (isIOS) {
-          // iOS Safari doesn't honor download attribute reliably
           window.open(canvas.toDataURL('image/png'), '_blank');
         } else {
           canvas.toBlob((blob) => {
@@ -196,9 +264,8 @@
             URL.revokeObjectURL(link.href);
           }, 'image/png');
         }
-
         showToast('Your conference poster has been downloaded successfully.');
-      } catch(err) {
+      } catch (err) {
         console.error(err);
         showToast('Failed to generate poster. Please try again.');
       } finally {
